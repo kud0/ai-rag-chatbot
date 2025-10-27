@@ -30,7 +30,16 @@ async function parsePDF(buffer: Buffer): Promise<ParseResult> {
   try {
     // Use require for CommonJS module in Node.js server environment
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const pdfParse = require('pdf-parse');
+    const pdfParseModule = require('pdf-parse');
+
+    // Get the actual function - might be default export or direct export
+    const pdfParse = pdfParseModule.default || pdfParseModule;
+
+    if (typeof pdfParse !== 'function') {
+      console.error('pdfParseModule:', pdfParseModule);
+      console.error('pdfParse type:', typeof pdfParse);
+      throw new Error(`PDF parser is not a function. Got: ${typeof pdfParse}`);
+    }
 
     // pdf-parse returns a promise with the parsed data
     const data = await pdfParse(buffer);
