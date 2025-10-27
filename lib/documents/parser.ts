@@ -1,13 +1,6 @@
 import mammoth from 'mammoth';
 import { FileType } from '@/lib/utils/file';
 
-// Use dynamic import for pdf-parse to handle CommonJS/ESM compatibility
-async function loadPDFParser() {
-  // Use require() wrapped in dynamic import for CommonJS modules
-  const pdfParse = (await import('pdf-parse')).default || (await import('pdf-parse'));
-  return pdfParse;
-}
-
 /**
  * Parse result interface
  */
@@ -31,21 +24,16 @@ export class ParseError extends Error {
 }
 
 /**
- * Parse PDF file
+ * Parse PDF file using pdf-parse via require (CommonJS)
  */
 async function parsePDF(buffer: Buffer): Promise<ParseResult> {
   try {
-    const pdfParse = await loadPDFParser();
-
-    // Handle both function and module with function
-    const parseFunc = typeof pdfParse === 'function' ? pdfParse : (pdfParse as any).default || pdfParse;
-
-    if (typeof parseFunc !== 'function') {
-      throw new Error('PDF parser is not a function');
-    }
+    // Use require for CommonJS module in Node.js server environment
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const pdfParse = require('pdf-parse');
 
     // pdf-parse returns a promise with the parsed data
-    const data = await parseFunc(buffer);
+    const data = await pdfParse(buffer);
     const text = data.text || '';
 
     // Validate content is not empty
