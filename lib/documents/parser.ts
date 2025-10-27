@@ -1,4 +1,5 @@
 import mammoth from 'mammoth';
+import { extractText, getDocumentProxy } from 'unpdf';
 import { FileType } from '@/lib/utils/file';
 
 /**
@@ -24,36 +25,26 @@ export class ParseError extends Error {
 }
 
 /**
- * Parse PDF file using pdf-parse via require (CommonJS)
+ * Parse PDF file using unpdf (ESM-compatible)
  */
 async function parsePDF(buffer: Buffer): Promise<ParseResult> {
   try {
-    // Use require for CommonJS module in Node.js server environment
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const pdfParseModule = require('pdf-parse');
+    // Convert Buffer to Uint8Array for unpdf
+    const uint8Array = new Uint8Array(buffer);
 
-    // Get the actual function - might be default export or direct export
-    const pdfParse = pdfParseModule.default || pdfParseModule;
-
-    if (typeof pdfParse !== 'function') {
-      console.error('pdfParseModule:', pdfParseModule);
-      console.error('pdfParse type:', typeof pdfParse);
-      throw new Error(`PDF parser is not a function. Got: ${typeof pdfParse}`);
-    }
-
-    // pdf-parse returns a promise with the parsed data
-    const data = await pdfParse(buffer);
-    const text = data.text || '';
+    // Get PDF document proxy and extract text
+    const pdf = await getDocumentProxy(uint8Array);
+    const { totalPages, text } = await extractText(pdf, { mergePages: true });
 
     // Validate content is not empty
-    if (!text.trim()) {
+    if (!text || !text.trim()) {
       throw new Error('PDF file appears to be empty or contains no extractable text');
     }
 
     return {
-      text,
+      text: text.trim(),
       metadata: {
-        pageCount: data.numpages,
+        pageCount: totalPages,
         wordCount: text.split(/\s+/).filter((w: string) => w.length > 0).length,
         charCount: text.length,
       },
