@@ -85,9 +85,9 @@ export async function getAnalyticsStats(): Promise<ActionResult<{
       .from('documents')
       .select('metadata');
 
-    const totalStorage = documents?.reduce((acc, doc) => {
+    const totalStorage = (documents as any[])?.reduce((acc: number, doc: any) => {
       const size = doc.metadata?.fileSize || 0;
-      return acc + size;
+      return acc + (typeof size === 'number' ? size : 0);
     }, 0) || 0;
 
     // Get recent activity (last 10 documents)
@@ -135,10 +135,10 @@ export async function getDocumentByIdAdmin(documentId: string): Promise<ActionRe
       .eq('id', documentId)
       .single();
 
-    if (error) {
+    if (error || !document) {
       return {
         success: false,
-        error: error.message,
+        error: error?.message || 'Document not found',
       };
     }
 
@@ -151,7 +151,7 @@ export async function getDocumentByIdAdmin(documentId: string): Promise<ActionRe
     return {
       success: true,
       data: {
-        ...document,
+        ...(document as any),
         chunks: chunks || [],
       },
     };

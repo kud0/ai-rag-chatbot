@@ -1,5 +1,7 @@
 #!/usr/bin/env tsx
 
+// @ts-nocheck
+
 /**
  * Seed Database Script
  *

@@ -19,7 +19,7 @@ export const SourceReferenceSchema = z.object({
   documentTitle: z.string(),
   chunkContent: z.string(),
   similarity: z.number().min(0).max(1),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type SourceReference = z.infer<typeof SourceReferenceSchema>;
@@ -33,7 +33,7 @@ export const MessageSchema = z.object({
   content: z.string().min(1),
   createdAt: z.date(),
   sources: z.array(SourceReferenceSchema).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type Message = z.infer<typeof MessageSchema>;
@@ -48,7 +48,7 @@ export const ChatSessionSchema = z.object({
   createdAt: z.date(),
   updatedAt: z.date(),
   messages: z.array(MessageSchema).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type ChatSession = z.infer<typeof ChatSessionSchema>;
@@ -62,7 +62,7 @@ export const StreamResponseSchema = z.object({
   content: z.string().optional(),
   sources: z.array(SourceReferenceSchema).optional(),
   error: z.string().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type StreamResponse = z.infer<typeof StreamResponseSchema>;

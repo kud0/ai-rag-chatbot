@@ -9,7 +9,7 @@ export async function middleware(request: NextRequest) {
   const { response, user } = await updateSession(request);
 
   // Protected routes that require authentication
-  const protectedPaths = ['/dashboard', '/profile', '/settings'];
+  const protectedPaths = ['/chat', '/admin', '/profile', '/settings'];
   const isProtectedRoute = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
@@ -21,14 +21,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Redirect to dashboard if accessing auth pages while authenticated
+  // Redirect to chat if accessing auth pages while authenticated
   const authPaths = ['/login', '/signup'];
   const isAuthRoute = authPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
 
   if (isAuthRoute && user) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL('/chat', request.url));
   }
 
   return response;

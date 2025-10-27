@@ -61,6 +61,16 @@ export async function POST(request: NextRequest) {
     // Clean extracted text
     const cleanedText = cleanText(parseResult.text);
 
+    // Validate content is not empty after cleaning
+    if (!cleanedText || cleanedText.trim().length === 0) {
+      return NextResponse.json(
+        {
+          error: 'Document appears to be empty or contains no extractable text. Please upload a document with content.',
+        },
+        { status: 400 }
+      );
+    }
+
     // Check content length
     if (cleanedText.length > DOCUMENT_LIMITS.maxContentLength) {
       return NextResponse.json(

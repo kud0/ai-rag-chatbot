@@ -67,11 +67,11 @@ export function ChatInterface({
         description: error.message,
       });
     },
-    onFinish: async (message) => {
+    onFinish: async ({ message }) => {
       console.log('[Chat] onFinish called:', {
         role: message.role,
-        hasContent: !!message.content,
-        hasParts: !!message.parts,
+        hasContent: !!(message as any).content,
+        hasParts: !!(message as any).parts,
         sessionId: currentSessionId,
       });
 

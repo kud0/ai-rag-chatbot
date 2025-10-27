@@ -11,7 +11,7 @@ export const DocumentMetadataSchema = z.object({
   author: z.string().optional(),
   tags: z.array(z.string()).optional(),
   language: z.string().optional(),
-  customFields: z.record(z.unknown()).optional(),
+  customFields: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type DocumentMetadata = z.infer<typeof DocumentMetadataSchema>;

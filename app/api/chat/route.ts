@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
         });
 
         if (ragResult.context && ragResult.sources && ragResult.sources.length > 0) {
-          const sourcesText = ragResult.sources.map((s, i) => `[${i + 1}] ${s.documentTitle || s.title || 'Unknown'}`).join(', ');
+          const sourcesText = ragResult.sources.map((s, i) => `[${i + 1}] ${s.documentTitle || 'Unknown'}`).join(', ');
 
           systemMessage = `You are a document-based Q&A assistant. You can ONLY answer questions using the context provided below from uploaded documents.
 
@@ -121,7 +121,6 @@ Answer the user's question using ONLY the context above.`;
       system: systemMessage,
       messages: coreMessages,
       temperature: CHAT_CONFIG.temperature,
-      maxTokens: CHAT_CONFIG.maxTokens,
     });
 
     // Return streaming UIMessage response

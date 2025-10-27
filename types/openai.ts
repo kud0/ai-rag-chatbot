@@ -28,7 +28,7 @@ export const OpenAIChatMessageSchema = z.object({
   role: z.enum(['system', 'user', 'assistant', 'function']),
   content: z.string(),
   name: z.string().optional(),
-  function_call: z.record(z.unknown()).optional(),
+  function_call: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type OpenAIChatMessage = z.infer<typeof OpenAIChatMessageSchema>;

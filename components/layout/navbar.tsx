@@ -3,11 +3,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { MessageSquare } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/layout/theme-toggle';
 import { MobileNav } from '@/components/layout/mobile-nav';
 import { UserAvatar } from '@/components/auth/user-avatar';
+import { createBrowserClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
 
 const routes = [
   {
@@ -20,16 +23,6 @@ const routes = [
   },
 ];
 
-interface NavbarProps {
-  user?: {
-    email?: string;
-    user_metadata?: {
-      avatar_url?: string;
-      full_name?: string;
-    };
-  };
-}
-
 /**
  * Main navigation bar component.
  * Displays app logo, navigation links, theme toggle, and user avatar.
@@ -40,30 +33,57 @@ interface NavbarProps {
  * - Theme toggle button
  * - User avatar with dropdown menu
  * - Sticky positioning
- *
- * @param props - Component props
- * @param props.user - User object from Supabase auth (optional)
+ * - Client-side user authentication
  *
  * @example
  * ```tsx
  * import { Navbar } from '@/components/layout/navbar';
- * import { createClient } from '@/lib/supabase/server';
  *
- * export async function AppLayout({ children }: { children: React.ReactNode }) {
- *   const supabase = await createClient();
- *   const { data: { user } } = await supabase.auth.getUser();
- *
+ * export function AppLayout({ children }: { children: React.ReactNode }) {
  *   return (
  *     <div>
- *       <Navbar user={user} />
+ *       <Navbar />
  *       {children}
  *     </div>
  *   );
  * }
  * ```
  */
-export function Navbar({ user }: NavbarProps) {
+export function Navbar() {
   const pathname = usePathname();
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const supabase = createBrowserClient();
+
+    // Fetch initial user
+    const fetchUser = async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        setUser(user);
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUser();
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -95,15 +115,19 @@ export function Navbar({ user }: NavbarProps) {
         </div>
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          {user ? (
-            <UserAvatar user={user} />
-          ) : (
-            <Link
-              href="/login"
-              className="text-sm font-medium transition-colors hover:text-primary"
-            >
-              Sign In
-            </Link>
+          {!isLoading && (
+            <>
+              {user ? (
+                <UserAvatar user={user} />
+              ) : (
+                <Link
+                  href="/login"
+                  className="text-sm font-medium transition-colors hover:text-primary"
+                >
+                  Sign In
+                </Link>
+              )}
+            </>
           )}
           <MobileNav />
         </div>

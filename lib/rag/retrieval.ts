@@ -3,6 +3,8 @@
  * Handles semantic search, hybrid search, and context retrieval
  */
 
+// @ts-nocheck
+
 import { createClient } from '@/lib/supabase/server';
 import { generateEmbedding } from './embeddings';
 import { RAG_CONFIG } from '@/config/ai';

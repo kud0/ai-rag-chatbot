@@ -35,7 +35,7 @@ export function SourceCitations({ sources, className }: SourceCitationsProps) {
           {sources.map((source, index) => {
             const relevancePercent = (source.similarity * 100).toFixed(1);
             const chunkInfo = source.metadata
-              ? `Chunk ${source.metadata.chunkIndex + 1}`
+              ? `Chunk ${(source.metadata as any).chunkIndex + 1}`
               : '';
 
             return (

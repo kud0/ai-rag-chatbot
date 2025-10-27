@@ -1,16 +1,20 @@
-import type { default as PDFParse } from 'pdf-parse';
 import mammoth from 'mammoth';
-
-// Dynamic import for pdf-parse (CommonJS module)
-let pdf: typeof PDFParse;
-async function loadPDFParser() {
-  if (!pdf) {
-    const module = await import('pdf-parse');
-    pdf = module.default;
-  }
-  return pdf;
-}
 import { FileType } from '@/lib/utils/file';
+
+// Lazy load pdf-parse to avoid CommonJS import issues
+let pdfParserModule: any = null;
+async function loadPDFParser() {
+  if (!pdfParserModule) {
+    try {
+      // pdf-parse is a CommonJS module, import it dynamically
+      pdfParserModule = await import('pdf-parse') as any;
+    } catch (error) {
+      console.error('Failed to load pdf-parse module:', error);
+      throw new Error('PDF parsing library could not be loaded');
+    }
+  }
+  return pdfParserModule;
+}
 
 /**
  * Parse result interface
@@ -39,15 +43,56 @@ export class ParseError extends Error {
  */
 async function parsePDF(buffer: Buffer): Promise<ParseResult> {
   try {
-    const pdfParser = await loadPDFParser();
-    const data = await pdfParser(buffer);
+    const pdfModule = await loadPDFParser();
+
+    if (!pdfModule) {
+      throw new Error('PDF parser module is not properly initialized');
+    }
+
+    // pdf-parse exports a default function that can be called directly
+    // Try to get the callable function from the module
+    let parseFunction: any;
+
+    // Debug: log what we have
+    console.log('pdfModule.default type:', typeof pdfModule.default);
+    console.log('pdfModule.default is:', pdfModule.default);
+    if (pdfModule.default) {
+      console.log('pdfModule.default keys:', Object.keys(pdfModule.default));
+      console.log('pdfModule.default.default type:', typeof pdfModule.default.default);
+    }
+
+    // Check for default export first (most common)
+    if (pdfModule.default) {
+      if (typeof pdfModule.default === 'function') {
+        parseFunction = pdfModule.default;
+      } else if (typeof pdfModule.default.default === 'function') {
+        parseFunction = pdfModule.default.default;
+      }
+    }
+
+    // If no default, try the module itself
+    if (!parseFunction && typeof pdfModule === 'function') {
+      parseFunction = pdfModule;
+    }
+
+    if (!parseFunction) {
+      throw new Error('Could not find callable PDF parser function');
+    }
+
+    const data = await parseFunction(buffer);
+    const text = data.text || '';
+
+    // Validate content is not empty
+    if (!text.trim()) {
+      throw new Error('PDF file appears to be empty or contains no extractable text');
+    }
 
     return {
-      text: data.text,
+      text,
       metadata: {
         pageCount: data.numpages,
-        wordCount: data.text.split(/\s+/).length,
-        charCount: data.text.length,
+        wordCount: text.split(/\s+/).filter((w: string) => w.length > 0).length,
+        charCount: text.length,
       },
     };
   } catch (error) {
@@ -64,12 +109,17 @@ async function parsePDF(buffer: Buffer): Promise<ParseResult> {
 async function parseDOCX(buffer: Buffer): Promise<ParseResult> {
   try {
     const result = await mammoth.extractRawText({ buffer });
-    const text = result.value;
+    const text = result.value || '';
+
+    // Validate content is not empty
+    if (!text.trim()) {
+      throw new Error('DOCX file appears to be empty or contains no extractable text');
+    }
 
     return {
       text,
       metadata: {
-        wordCount: text.split(/\s+/).length,
+        wordCount: text.split(/\s+/).filter(w => w.length > 0).length,
         charCount: text.length,
       },
     };
@@ -88,10 +138,15 @@ async function parseText(buffer: Buffer): Promise<ParseResult> {
   try {
     const text = buffer.toString('utf-8');
 
+    // Validate content is not empty
+    if (!text.trim()) {
+      throw new Error('Text file appears to be empty');
+    }
+
     return {
       text,
       metadata: {
-        wordCount: text.split(/\s+/).length,
+        wordCount: text.split(/\s+/).filter(w => w.length > 0).length,
         charCount: text.length,
       },
     };
@@ -110,10 +165,15 @@ async function parseMarkdown(buffer: Buffer): Promise<ParseResult> {
   try {
     const text = buffer.toString('utf-8');
 
+    // Validate content is not empty
+    if (!text.trim()) {
+      throw new Error('Markdown file appears to be empty');
+    }
+
     return {
       text,
       metadata: {
-        wordCount: text.split(/\s+/).length,
+        wordCount: text.split(/\s+/).filter(w => w.length > 0).length,
         charCount: text.length,
       },
     };

@@ -65,7 +65,7 @@ export async function signIn(prevState: ActionResult | undefined, formData: Form
   if (!validation.success) {
     return {
       success: false,
-      error: validation.error.errors[0].message,
+      error: validation.error.issues[0]?.message || 'Validation failed',
     };
   }
 
@@ -127,7 +127,7 @@ export async function signUp(prevState: ActionResult | undefined, formData: Form
   if (!validation.success) {
     return {
       success: false,
-      error: validation.error.errors[0].message,
+      error: validation.error.issues[0]?.message || 'Validation failed',
     };
   }
 
@@ -222,7 +222,7 @@ export async function sendMagicLink(prevState: ActionResult | undefined, formDat
   if (!validation.success) {
     return {
       success: false,
-      error: validation.error.errors[0].message,
+      error: validation.error.issues[0]?.message || 'Validation failed',
     };
   }
 
@@ -280,7 +280,7 @@ export async function resetPassword(prevState: ActionResult | undefined, formDat
   if (!validation.success) {
     return {
       success: false,
-      error: validation.error.errors[0].message,
+      error: validation.error.issues[0]?.message || 'Validation failed',
     };
   }
 

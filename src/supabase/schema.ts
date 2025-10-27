@@ -342,7 +342,7 @@ export interface SourceReference {
 }
 
 // Enhanced message type with typed sources
-export interface ChatMessageWithSources extends ChatMessage {
+export interface ChatMessageWithSources extends Omit<ChatMessage, 'sources'> {
   sources: SourceReference[]
 }
 
