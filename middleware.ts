@@ -1,82 +1,12 @@
-import { createServerClient } from '@supabase/ssr';
 import { type NextRequest, NextResponse } from 'next/server';
 
 /**
- * Next.js middleware for handling Supabase authentication.
- * Automatically refreshes user sessions and protects routes.
+ * Simplified middleware for Edge Runtime compatibility.
+ * Authentication will be handled at the page/API level instead.
  */
 export async function middleware(request: NextRequest) {
-  try {
-    // Validate environment variables
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.error('Missing Supabase environment variables');
-      return NextResponse.next();
-    }
-
-    // Create an unmodified response
-    let response = NextResponse.next({
-      request,
-    });
-
-    const supabase = createServerClient(
-      supabaseUrl,
-      supabaseAnonKey,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll();
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value }) => {
-              request.cookies.set(name, value);
-            });
-            response = NextResponse.next({
-              request,
-            });
-            cookiesToSet.forEach(({ name, value, options }) => {
-              response.cookies.set(name, value, options);
-            });
-          },
-        },
-      }
-    );
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-  // Protected routes that require authentication
-  const protectedPaths = ['/chat', '/admin', '/profile', '/settings'];
-  const isProtectedRoute = protectedPaths.some((path) =>
-    request.nextUrl.pathname.startsWith(path)
-  );
-
-  // Redirect to login if accessing protected route without authentication
-  if (isProtectedRoute && !user) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirectTo', request.nextUrl.pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // Redirect to chat if accessing auth pages while authenticated
-  const authPaths = ['/login', '/signup'];
-  const isAuthRoute = authPaths.some((path) =>
-    request.nextUrl.pathname.startsWith(path)
-  );
-
-  if (isAuthRoute && user) {
-    return NextResponse.redirect(new URL('/chat', request.url));
-  }
-
-  return response;
-  } catch (error) {
-    // Log error but don't break the app
-    console.error('Middleware error:', error);
-    return NextResponse.next();
-  }
+  // Just pass through for now - auth will be handled at page level
+  return NextResponse.next();
 }
 
 export const config = {
