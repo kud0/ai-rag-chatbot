@@ -1,8 +1,12 @@
 import mammoth from 'mammoth';
 import { FileType } from '@/lib/utils/file';
 
-// Import pdf-parse directly - it's a CommonJS module but Next.js handles it
-import pdfParse from 'pdf-parse';
+// Use dynamic import for pdf-parse to handle CommonJS/ESM compatibility
+async function loadPDFParser() {
+  // Use require() wrapped in dynamic import for CommonJS modules
+  const pdfParse = (await import('pdf-parse')).default || (await import('pdf-parse'));
+  return pdfParse;
+}
 
 /**
  * Parse result interface
@@ -31,8 +35,17 @@ export class ParseError extends Error {
  */
 async function parsePDF(buffer: Buffer): Promise<ParseResult> {
   try {
+    const pdfParse = await loadPDFParser();
+
+    // Handle both function and module with function
+    const parseFunc = typeof pdfParse === 'function' ? pdfParse : (pdfParse as any).default || pdfParse;
+
+    if (typeof parseFunc !== 'function') {
+      throw new Error('PDF parser is not a function');
+    }
+
     // pdf-parse returns a promise with the parsed data
-    const data = await pdfParse(buffer);
+    const data = await parseFunc(buffer);
     const text = data.text || '';
 
     // Validate content is not empty
