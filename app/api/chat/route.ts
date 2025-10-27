@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     const userMessageText = extractMessageContent(latestMessage);
 
     // Build system message with RAG context if enabled
-    let systemMessage = 'You are a document-based Q&A assistant. You can ONLY answer questions based on the uploaded documents in your knowledge base. If no relevant context is provided, say "I don\'t have information about that in the uploaded documents."';
+    let systemMessage = '';
 
     if (includeRag && userMessageText) {
       try {
@@ -83,30 +83,52 @@ export async function POST(req: NextRequest) {
           filters: { userId: user.id },
         });
 
+        console.log('[RAG] Search results:', {
+          foundContext: !!ragResult.context,
+          sourcesCount: ragResult.sources?.length || 0,
+          query: userMessageText.substring(0, 50)
+        });
+
         if (ragResult.context && ragResult.sources && ragResult.sources.length > 0) {
           const sourcesText = ragResult.sources.map((s, i) => `[${i + 1}] ${s.documentTitle || 'Unknown'}`).join(', ');
 
-          systemMessage = `You are a document-based Q&A assistant. You can ONLY answer questions using the context provided below from uploaded documents.
+          systemMessage = `You are a strict document-based Q&A assistant. You are FORBIDDEN from using any knowledge outside the context provided below.
 
-CRITICAL RULES:
-- ONLY use information from the CONTEXT below
-- DO NOT use your general knowledge
-- If the context doesn't contain the answer, say "I don't have information about that in the uploaded documents"
-- Always cite which document you're using
+ABSOLUTE RULES (VIOLATION WILL RESULT IN ERROR):
+1. ONLY answer using information from the CONTEXT below
+2. DO NOT use any general knowledge, training data, or external information
+3. If the CONTEXT doesn't contain the answer, you MUST respond: "I don't have information about that in the uploaded documents."
+4. Always cite the source document number when answering
+5. Never make assumptions or inferences beyond what's explicitly in the CONTEXT
 
-CONTEXT FROM DOCUMENTATION:
+CONTEXT FROM UPLOADED DOCUMENTS:
 ${ragResult.context}
 
 AVAILABLE SOURCES: ${sourcesText}
 
-Answer the user's question using ONLY the context above.`;
+Remember: Answer ONLY from the context above. If the answer isn't there, say you don't have that information.`;
         } else {
-          systemMessage = 'You are a document-based Q&A assistant. No relevant documents were found for this query. You must tell the user: "I don\'t have information about that in the uploaded documents. Please try rephrasing your question or upload relevant documents."';
+          systemMessage = `You are a document-based Q&A assistant.
+
+The knowledge base search found NO relevant documents for this query.
+
+You MUST respond with EXACTLY this message:
+"I don't have information about that in the uploaded documents. Please try rephrasing your question or upload relevant documents first."
+
+DO NOT provide any general knowledge or information outside the document database.`;
         }
       } catch (error) {
         console.error('[RAG] Error:', error);
-        systemMessage = 'You are a document-based Q&A assistant. There was an error searching the documents. Tell the user: "I\'m having trouble searching the documents right now. Please try again."';
+        systemMessage = `You are a document-based Q&A assistant.
+
+There was an error searching the document database.
+
+You MUST respond with EXACTLY this message:
+"I'm having trouble searching the documents right now. Please try again in a moment."`;
       }
+    } else {
+      // RAG disabled - general assistant mode
+      systemMessage = 'You are a helpful AI assistant. Answer questions to the best of your ability.';
     }
 
     // Convert UIMessages to simple CoreMessage format
