@@ -1,20 +1,8 @@
 import mammoth from 'mammoth';
 import { FileType } from '@/lib/utils/file';
 
-// Lazy load pdf-parse to avoid CommonJS import issues
-let pdfParserModule: any = null;
-async function loadPDFParser() {
-  if (!pdfParserModule) {
-    try {
-      // pdf-parse is a CommonJS module, import it dynamically
-      pdfParserModule = await import('pdf-parse') as any;
-    } catch (error) {
-      console.error('Failed to load pdf-parse module:', error);
-      throw new Error('PDF parsing library could not be loaded');
-    }
-  }
-  return pdfParserModule;
-}
+// Import pdf-parse directly - it's a CommonJS module but Next.js handles it
+import pdfParse from 'pdf-parse';
 
 /**
  * Parse result interface
@@ -43,43 +31,8 @@ export class ParseError extends Error {
  */
 async function parsePDF(buffer: Buffer): Promise<ParseResult> {
   try {
-    const pdfModule = await loadPDFParser();
-
-    if (!pdfModule) {
-      throw new Error('PDF parser module is not properly initialized');
-    }
-
-    // pdf-parse exports a default function that can be called directly
-    // Try to get the callable function from the module
-    let parseFunction: any;
-
-    // Debug: log what we have
-    console.log('pdfModule.default type:', typeof pdfModule.default);
-    console.log('pdfModule.default is:', pdfModule.default);
-    if (pdfModule.default) {
-      console.log('pdfModule.default keys:', Object.keys(pdfModule.default));
-      console.log('pdfModule.default.default type:', typeof pdfModule.default.default);
-    }
-
-    // Check for default export first (most common)
-    if (pdfModule.default) {
-      if (typeof pdfModule.default === 'function') {
-        parseFunction = pdfModule.default;
-      } else if (typeof pdfModule.default.default === 'function') {
-        parseFunction = pdfModule.default.default;
-      }
-    }
-
-    // If no default, try the module itself
-    if (!parseFunction && typeof pdfModule === 'function') {
-      parseFunction = pdfModule;
-    }
-
-    if (!parseFunction) {
-      throw new Error('Could not find callable PDF parser function');
-    }
-
-    const data = await parseFunction(buffer);
+    // pdf-parse returns a promise with the parsed data
+    const data = await pdfParse(buffer);
     const text = data.text || '';
 
     // Validate content is not empty
@@ -96,6 +49,7 @@ async function parsePDF(buffer: Buffer): Promise<ParseResult> {
       },
     };
   } catch (error) {
+    console.error('PDF parsing error:', error);
     throw new ParseError(
       `Failed to parse PDF: ${error instanceof Error ? error.message : 'Unknown error'}`,
       'pdf'
