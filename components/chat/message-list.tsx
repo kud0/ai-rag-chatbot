@@ -35,12 +35,12 @@ export function MessageList({
   }, [messages, isLoading]);
 
   return (
-    <ScrollArea className={cn('flex-1', className)}>
-      <div className="space-y-4 p-4" ref={scrollAreaRef}>
+    <ScrollArea className={cn('h-full', className)}>
+      <div className="mx-auto max-w-4xl space-y-4 px-4 py-6" ref={scrollAreaRef}>
         {messages.length === 0 && !isLoading && (
-          <div className="flex h-full items-center justify-center py-12">
+          <div className="flex min-h-[400px] items-center justify-center">
             <div className="text-center text-muted-foreground">
-              <p className="text-lg font-medium">No messages yet</p>
+              <p className="text-base font-medium">No messages yet</p>
               <p className="text-sm">Start a conversation to see messages here</p>
             </div>
           </div>
@@ -53,7 +53,7 @@ export function MessageList({
             {/* Show sources for assistant messages if available */}
             {message.role === 'assistant' && message.sources && (
               <div className="flex justify-start">
-                <div className="max-w-[80%]">
+                <div className="max-w-[85%]">
                   <SourceCitations sources={message.sources} />
                 </div>
               </div>

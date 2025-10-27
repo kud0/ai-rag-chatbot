@@ -79,13 +79,14 @@ export function SessionSidebar({
   };
 
   return (
-    <div className={cn('flex h-full flex-col border-r bg-muted/50', className)}>
+    <div className={cn('flex h-full flex-col border-r bg-muted/30', className)}>
       {/* Header */}
-      <div className="border-b p-4">
+      <div className="border-b p-3">
         <Button
           onClick={onCreateSession}
           className="w-full"
           size="sm"
+          variant="outline"
         >
           <Plus className="mr-2 h-4 w-4" />
           New Chat

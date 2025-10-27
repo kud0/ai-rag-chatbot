@@ -35,21 +35,6 @@ export default async function ChatPage() {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Page header */}
-      <header className="hidden shrink-0 border-b bg-background lg:block">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold">AI Chat</h1>
-          <p className="text-sm text-muted-foreground">
-            Ask questions about your documents
-          </p>
-        </div>
-      </header>
-
-      {/* Chat interface */}
-      <main className="flex-1 overflow-hidden">
-        <ChatInterface initialSessions={sessions} userId={user.id} className="h-full" />
-      </main>
-    </div>
+    <ChatInterface initialSessions={sessions} userId={user.id} className="h-full" />
   );
 }

@@ -262,7 +262,7 @@ export function ChatInterface({
   };
 
   return (
-    <div className={cn('relative flex h-full w-full', className)}>
+    <div className={cn('relative flex h-full w-full bg-background', className)}>
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
@@ -274,7 +274,7 @@ export function ChatInterface({
       {/* Sidebar */}
       <div
         className={cn(
-          'h-full w-80 shrink-0 border-r transition-transform duration-200 lg:translate-x-0',
+          'h-full w-64 shrink-0 transition-transform duration-200 lg:translate-x-0',
           sidebarOpen
             ? 'fixed left-0 top-0 z-50 translate-x-0 lg:relative'
             : 'fixed left-0 top-0 z-50 -translate-x-full lg:relative'
@@ -291,9 +291,9 @@ export function ChatInterface({
       </div>
 
       {/* Main chat area */}
-      <div className="flex h-full min-w-0 flex-1 flex-col">
+      <div className="flex h-full min-w-0 flex-1 flex-col bg-background">
         {/* Mobile header */}
-        <div className="flex shrink-0 items-center justify-between border-b p-4 lg:hidden">
+        <div className="flex shrink-0 items-center justify-between border-b bg-background px-4 py-3 lg:hidden">
           <Button
             size="icon"
             variant="ghost"
@@ -301,14 +301,14 @@ export function ChatInterface({
           >
             <Menu className="h-5 w-5" />
           </Button>
-          <h1 className="truncate text-lg font-semibold">
+          <h1 className="truncate text-base font-medium">
             {sessions.find((s) => s.id === currentSessionId)?.title || 'Chat'}
           </h1>
-          <div className="w-10" /> {/* Spacer for centering */}
+          <div className="w-10" />
         </div>
 
         {/* Messages - takes remaining space */}
-        <div className="min-h-0 flex-1">
+        <div className="min-h-0 flex-1 overflow-hidden">
           <MessageList
             messages={messages.map((msg, index) => ({
               id: msg.id || `msg-${index}`,
@@ -323,7 +323,7 @@ export function ChatInterface({
         </div>
 
         {/* Input - fixed at bottom */}
-        <div className="shrink-0 border-t p-4">
+        <div className="shrink-0 border-t bg-background px-4 py-3">
           <ChatInput
             onSend={handleSendMessage}
             disabled={isLoading}
