@@ -1,43 +1,52 @@
 import { createServerClient } from '@supabase/ssr';
 import { type NextRequest, NextResponse } from 'next/server';
-import type { Database } from '@/types/database';
 
 /**
  * Next.js middleware for handling Supabase authentication.
  * Automatically refreshes user sessions and protects routes.
  */
 export async function middleware(request: NextRequest) {
-  // Create an unmodified response
-  let response = NextResponse.next({
-    request,
-  });
+  try {
+    // Validate environment variables
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => {
-            request.cookies.set(name, value);
-          });
-          response = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
-          });
-        },
-      },
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('Missing Supabase environment variables');
+      return NextResponse.next();
     }
-  );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    // Create an unmodified response
+    let response = NextResponse.next({
+      request,
+    });
+
+    const supabase = createServerClient(
+      supabaseUrl,
+      supabaseAnonKey,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) => {
+              request.cookies.set(name, value);
+            });
+            response = NextResponse.next({
+              request,
+            });
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, options);
+            });
+          },
+        },
+      }
+    );
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
   // Protected routes that require authentication
   const protectedPaths = ['/chat', '/admin', '/profile', '/settings'];
@@ -63,6 +72,11 @@ export async function middleware(request: NextRequest) {
   }
 
   return response;
+  } catch (error) {
+    // Log error but don't break the app
+    console.error('Middleware error:', error);
+    return NextResponse.next();
+  }
 }
 
 export const config = {
