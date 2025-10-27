@@ -31,7 +31,7 @@ export function MessageBubble({ message, className }: MessageBubbleProps) {
     >
       <div
         className={cn(
-          'max-w-[80%] rounded-lg px-4 py-3',
+          'max-w-[75%] rounded-2xl px-4 py-2.5',
           isUser
             ? 'bg-primary text-primary-foreground'
             : isAssistant
@@ -47,7 +47,13 @@ export function MessageBubble({ message, className }: MessageBubbleProps) {
         )}
 
         {/* Message content with markdown support */}
-        <div className="prose prose-sm dark:prose-invert max-w-none">
+        <div className={cn(
+          "prose prose-sm dark:prose-invert max-w-none",
+          "[&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
+          "[&_p]:my-1 [&_p]:leading-relaxed",
+          "[&_ul]:my-1 [&_ol]:my-1",
+          "[&_pre]:my-2 [&_pre]:text-sm"
+        )}>
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
@@ -59,7 +65,7 @@ export function MessageBubble({ message, className }: MessageBubbleProps) {
                     style={oneDark}
                     language={match[1]}
                     PreTag="div"
-                    className="rounded-md"
+                    className="!my-2 !rounded-md !text-sm"
                     {...props}
                   >
                     {String(children).replace(/\n$/, '')}
@@ -67,7 +73,7 @@ export function MessageBubble({ message, className }: MessageBubbleProps) {
                 ) : (
                   <code
                     className={cn(
-                      'rounded bg-muted px-1 py-0.5 text-sm',
+                      'rounded bg-black/10 dark:bg-white/10 px-1.5 py-0.5 text-sm font-mono',
                       className
                     )}
                     {...props}
@@ -80,7 +86,7 @@ export function MessageBubble({ message, className }: MessageBubbleProps) {
               a({ node, children, ...props }) {
                 return (
                   <a
-                    className="text-blue-500 hover:text-blue-600 underline"
+                    className="text-blue-500 hover:text-blue-600 underline underline-offset-2"
                     target="_blank"
                     rel="noopener noreferrer"
                     {...props}
@@ -92,7 +98,7 @@ export function MessageBubble({ message, className }: MessageBubbleProps) {
               // Custom paragraph styling
               p({ node, children, ...props }) {
                 return (
-                  <p className="mb-2 last:mb-0" {...props}>
+                  <p className="leading-relaxed" {...props}>
                     {children}
                   </p>
                 );
@@ -106,7 +112,7 @@ export function MessageBubble({ message, className }: MessageBubbleProps) {
         {/* Timestamp */}
         <div
           className={cn(
-            'mt-2 text-xs opacity-70',
+            'mt-1 text-[11px] opacity-60',
             isUser ? 'text-right' : 'text-left'
           )}
         >
