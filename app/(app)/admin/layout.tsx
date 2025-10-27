@@ -55,8 +55,8 @@ export default async function AdminLayout({
 
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <aside className="w-64 border-r bg-muted/40 p-6">
+      {/* Sidebar - hidden on mobile, visible on desktop */}
+      <aside className="hidden w-64 shrink-0 border-r bg-muted/40 p-6 lg:block">
         <div className="mb-8">
           <h2 className="text-2xl font-bold">Admin Panel</h2>
           <p className="text-sm text-muted-foreground">Document Management</p>
@@ -82,8 +82,10 @@ export default async function AdminLayout({
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 p-8">
-        {children}
+      <main className="flex-1 overflow-x-hidden">
+        <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
+          {children}
+        </div>
       </main>
     </div>
   );
