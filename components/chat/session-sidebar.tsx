@@ -165,9 +165,9 @@ export function SessionSidebar({
                   </button>
                 )}
 
-                {/* Action buttons (visible on hover) */}
+                {/* Action buttons (visible on hover for desktop, always visible on mobile) */}
                 {!isEditing && (
-                  <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <div className="absolute right-2 top-2 flex gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
                     <Button
                       size="icon"
                       variant="ghost"
