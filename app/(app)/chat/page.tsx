@@ -35,6 +35,8 @@ export default async function ChatPage() {
   }
 
   return (
-    <ChatInterface initialSessions={sessions} userId={user.id} className="h-full" />
+    <div className="h-[calc(100vh-4rem)]">
+      <ChatInterface initialSessions={sessions} userId={user.id} className="h-full" />
+    </div>
   );
 }

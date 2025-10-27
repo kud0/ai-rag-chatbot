@@ -29,9 +29,9 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex min-h-screen flex-col">
       <Navbar />
-      <main className="flex-1 overflow-hidden">{children}</main>
+      <main className="flex-1">{children}</main>
     </div>
   );
 }
