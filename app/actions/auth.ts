@@ -41,6 +41,7 @@ type ActionResult = {
 /**
  * Signs in a user with email and password.
  *
+ * @param prevState - Previous action state (for useActionState compatibility)
  * @param formData - Form data containing email and password
  * @returns Action result with success status and optional error message
  *
@@ -53,7 +54,7 @@ type ActionResult = {
  * </form>
  * ```
  */
-export async function signIn(formData: FormData): Promise<ActionResult> {
+export async function signIn(prevState: ActionResult | undefined, formData: FormData): Promise<ActionResult> {
   const rawData = {
     email: formData.get('email') as string,
     password: formData.get('password') as string,
@@ -86,7 +87,7 @@ export async function signIn(formData: FormData): Promise<ActionResult> {
 
     // Get redirect URL from query params if present
     const redirectTo = formData.get('redirectTo') as string | null;
-    redirect(redirectTo || '/dashboard');
+    redirect(redirectTo || '/chat');
   } catch (error) {
     if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
       throw error;
@@ -114,7 +115,7 @@ export async function signIn(formData: FormData): Promise<ActionResult> {
  * </form>
  * ```
  */
-export async function signUp(formData: FormData): Promise<ActionResult> {
+export async function signUp(prevState: ActionResult | undefined, formData: FormData): Promise<ActionResult> {
   const rawData = {
     email: formData.get('email') as string,
     password: formData.get('password') as string,
@@ -211,7 +212,7 @@ export async function signOut(): Promise<ActionResult> {
  * </form>
  * ```
  */
-export async function sendMagicLink(formData: FormData): Promise<ActionResult> {
+export async function sendMagicLink(prevState: ActionResult | undefined, formData: FormData): Promise<ActionResult> {
   const rawData = {
     email: formData.get('email') as string,
   };
@@ -269,7 +270,7 @@ export async function sendMagicLink(formData: FormData): Promise<ActionResult> {
  * </form>
  * ```
  */
-export async function resetPassword(formData: FormData): Promise<ActionResult> {
+export async function resetPassword(prevState: ActionResult | undefined, formData: FormData): Promise<ActionResult> {
   const rawData = {
     email: formData.get('email') as string,
   };

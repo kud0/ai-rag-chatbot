@@ -58,7 +58,7 @@ export function VectorSearchTest() {
           query: query.trim(),
           searchType,
           topK: 5,
-          similarityThreshold: 0.7,
+          similarityThreshold: 0.3,  // Lowered to 0.3 based on actual similarity scores
           includeContext: true,
         }),
       });

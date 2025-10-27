@@ -113,7 +113,7 @@ export const RAG_CONFIG = {
   topK: 5,
 
   /** Minimum similarity score threshold (0-1) */
-  similarityThreshold: 0.7,
+  similarityThreshold: 0.3,  // Lowered to 0.3 based on actual similarity scores
 
   /** Maximum number of chunks to include in context */
   maxContextChunks: 3,
@@ -121,8 +121,8 @@ export const RAG_CONFIG = {
   /** Maximum total characters from retrieved chunks */
   maxContextLength: 2000,
 
-  /** Re-rank results by relevance */
-  enableReranking: true,
+  /** Re-rank results by relevance using hybrid search (semantic + keyword) */
+  enableReranking: false,
 
   /** Include source citations in responses */
   includeSources: true,

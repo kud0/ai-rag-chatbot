@@ -1,22 +1,9 @@
-import { Tiktoken, encoding_for_model } from 'tiktoken';
+import { encode, decode } from 'gpt-tokenizer';
 
 /**
  * Token counting utility for text chunking
- * Uses tiktoken to estimate tokens for OpenAI models
+ * Uses gpt-tokenizer which is compatible with Next.js server environments
  */
-
-let encoder: Tiktoken | null = null;
-
-/**
- * Initialize the token encoder (lazy initialization)
- */
-function getEncoder(): Tiktoken {
-  if (!encoder) {
-    // Use cl100k_base encoding (used by gpt-4, gpt-3.5-turbo, text-embedding-3-small)
-    encoder = encoding_for_model('gpt-3.5-turbo');
-  }
-  return encoder;
-}
 
 /**
  * Count tokens in a text string
@@ -25,8 +12,7 @@ function getEncoder(): Tiktoken {
  */
 export function countTokens(text: string): number {
   try {
-    const enc = getEncoder();
-    const tokens = enc.encode(text);
+    const tokens = encode(text);
     return tokens.length;
   } catch (error) {
     console.error('Error counting tokens:', error);
@@ -43,15 +29,14 @@ export function countTokens(text: string): number {
  */
 export function truncateToTokenLimit(text: string, maxTokens: number): string {
   try {
-    const enc = getEncoder();
-    const tokens = enc.encode(text);
+    const tokens = encode(text);
 
     if (tokens.length <= maxTokens) {
       return text;
     }
 
     const truncatedTokens = tokens.slice(0, maxTokens);
-    return enc.decode(truncatedTokens);
+    return decode(truncatedTokens);
   } catch (error) {
     console.error('Error truncating text:', error);
     // Fallback: rough character-based truncation
@@ -67,45 +52,38 @@ export function truncateToTokenLimit(text: string, maxTokens: number): string {
  * @param overlap - Number of tokens to overlap between chunks
  * @returns Array of text chunks
  */
-export function splitTextByTokens(
+export function splitIntoTokenChunks(
   text: string,
   maxTokens: number,
-  overlap: number = 0
+  overlap = 0
 ): string[] {
   try {
-    const enc = getEncoder();
-    const tokens = enc.encode(text);
+    const tokens = encode(text);
     const chunks: string[] = [];
 
     let start = 0;
     while (start < tokens.length) {
       const end = Math.min(start + maxTokens, tokens.length);
       const chunkTokens = tokens.slice(start, end);
-      const chunkText = enc.decode(chunkTokens);
-      chunks.push(chunkText);
+      chunks.push(decode(chunkTokens));
 
-      // Move forward, accounting for overlap
+      // Move to next chunk with overlap
       start = end - overlap;
-
-      // Prevent infinite loop if overlap is too large
-      if (start <= 0 && end < tokens.length) {
-        start = end;
-      }
+      if (start >= tokens.length) break;
     }
 
     return chunks;
   } catch (error) {
-    console.error('Error splitting text by tokens:', error);
-    // Fallback: character-based splitting
+    console.error('Error splitting text:', error);
+    // Fallback: character-based chunking
     const approxCharsPerChunk = maxTokens * 4;
-    const approxOverlapChars = overlap * 4;
     const chunks: string[] = [];
-
     let start = 0;
+
     while (start < text.length) {
       const end = Math.min(start + approxCharsPerChunk, text.length);
       chunks.push(text.slice(start, end));
-      start = end - approxOverlapChars;
+      start = end - overlap * 4;
     }
 
     return chunks;
@@ -113,23 +91,41 @@ export function splitTextByTokens(
 }
 
 /**
- * Estimate cost of generating embeddings based on token count
- * @param tokenCount - Number of tokens
+ * Estimate cost of API call based on token count
+ * @param tokens - Number of tokens
+ * @param model - Model name (gpt-4, gpt-3.5-turbo, text-embedding-3-small, etc.)
  * @returns Estimated cost in USD
  */
-export function estimateEmbeddingCost(tokenCount: number): number {
-  // text-embedding-3-small: $0.00002 per 1K tokens
-  const costPerThousandTokens = 0.00002;
-  return (tokenCount / 1000) * costPerThousandTokens;
+export function estimateCost(tokens: number, model: string): number {
+  // Pricing as of 2024 (per 1K tokens)
+  const pricing: Record<string, { input: number; output?: number }> = {
+    'gpt-4o-mini': { input: 0.00015, output: 0.0006 },
+    'gpt-4': { input: 0.03, output: 0.06 },
+    'gpt-3.5-turbo': { input: 0.0005, output: 0.0015 },
+    'text-embedding-3-small': { input: 0.00002 },
+    'text-embedding-3-large': { input: 0.00013 },
+  };
+
+  const modelPricing = pricing[model] || pricing['gpt-3.5-turbo'];
+  const costPer1K = modelPricing.input;
+
+  return (tokens / 1000) * costPer1K;
 }
 
 /**
- * Clean up token encoder resources
- * Call this when shutting down the application
+ * Batch token counts for multiple texts
+ * @param texts - Array of texts to count tokens for
+ * @returns Array of token counts
  */
-export function cleanup(): void {
-  if (encoder) {
-    encoder.free();
-    encoder = null;
-  }
+export function batchCountTokens(texts: string[]): number[] {
+  return texts.map(countTokens);
+}
+
+/**
+ * Get total token count for an array of texts
+ * @param texts - Array of texts
+ * @returns Total token count
+ */
+export function getTotalTokens(texts: string[]): number {
+  return texts.reduce((total, text) => total + countTokens(text), 0);
 }

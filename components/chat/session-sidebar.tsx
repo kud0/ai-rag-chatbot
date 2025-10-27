@@ -19,6 +19,16 @@ import {
 import { cn } from '@/lib/utils';
 import type { ChatSession } from '@/types/chat';
 import { Input } from '@/components/ui/input';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface SessionSidebarProps {
   sessions: ChatSession[];
@@ -41,6 +51,7 @@ export function SessionSidebar({
 }: SessionSidebarProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
+  const [deleteSessionId, setDeleteSessionId] = useState<string | null>(null);
 
   const handleStartEdit = (session: ChatSession) => {
     setEditingId(session.id);
@@ -58,6 +69,13 @@ export function SessionSidebar({
   const handleCancelEdit = () => {
     setEditingId(null);
     setEditTitle('');
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteSessionId) {
+      onDeleteSession(deleteSessionId);
+      setDeleteSessionId(null);
+    }
   };
 
   return (
@@ -167,9 +185,7 @@ export function SessionSidebar({
                       className="h-7 w-7 text-destructive hover:text-destructive"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (confirm('Delete this chat session?')) {
-                          onDeleteSession(session.id);
-                        }
+                        setDeleteSessionId(session.id);
                       }}
                     >
                       <Trash2 className="h-3 w-3" />
@@ -182,6 +198,24 @@ export function SessionSidebar({
           })}
         </div>
       </ScrollArea>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!deleteSessionId} onOpenChange={(open) => !open && setDeleteSessionId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete chat session?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the chat session and all its messages.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

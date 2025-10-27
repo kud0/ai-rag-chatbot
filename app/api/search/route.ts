@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { semanticSearch, hybridSearch, retrieveContext, formatSources } from '@/lib/rag/retrieval';
 import { DocumentSearchRequestSchema } from '@/types/document';
 import { VECTOR_SEARCH_CONFIG } from '@/config/ai';
+import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 /**
@@ -17,7 +18,6 @@ import { z } from 'zod';
  */
 const SearchRequestSchema = z.object({
   query: z.string().min(1, 'Query is required'),
-  userId: z.string().uuid().optional(),
   documentId: z.string().uuid().optional(),
   topK: z.number().int().min(1).max(20).optional(),
   similarityThreshold: z.number().min(0).max(1).optional(),
@@ -51,7 +51,6 @@ export async function POST(request: NextRequest) {
 
     const {
       query,
-      userId,
       documentId,
       topK,
       similarityThreshold,
@@ -59,12 +58,25 @@ export async function POST(request: NextRequest) {
       includeContext,
     } = validatedData.data;
 
-    // Build search options
+    // Get authenticated user
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in' },
+        { status: 401 }
+      );
+    }
+
+    console.log('[Search API] Query:', query, 'User:', user.id, 'Type:', searchType);
+
+    // Build search options with authenticated user ID
     const searchOptions = {
       topK,
       similarityThreshold,
       filters: {
-        userId,
+        userId: user.id,  // Always use authenticated user's ID
         documentId,
       },
     };

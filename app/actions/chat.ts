@@ -225,6 +225,79 @@ export async function deleteSession(sessionId: string) {
 }
 
 /**
+ * Save a message to a chat session
+ */
+export async function saveMessage(
+  sessionId: string,
+  role: 'user' | 'assistant' | 'system',
+  content: string,
+  sources?: any[]
+) {
+  try {
+    const supabase = await createClient();
+
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { error: 'Unauthorized', message: null };
+    }
+
+    // Verify session belongs to user
+    const { data: session, error: sessionError } = await supabase
+      .from('chat_sessions')
+      .select('user_id')
+      .eq('id', sessionId)
+      .single();
+
+    if (sessionError || !session || session.user_id !== user.id) {
+      return { error: 'Session not found or unauthorized', message: null };
+    }
+
+    // Save the message
+    const { data: message, error } = await supabase
+      .from('chat_messages')
+      .insert({
+        session_id: sessionId,
+        role,
+        content,
+        sources: sources || null,
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error saving message:', error);
+      return { error: error.message, message: null };
+    }
+
+    // Update session's updated_at timestamp
+    await supabase
+      .from('chat_sessions')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', sessionId);
+
+    return {
+      error: null,
+      message: {
+        id: message.id,
+        role: message.role,
+        content: message.content,
+        createdAt: new Date(message.created_at),
+        sources: message.sources || undefined,
+      } as Message,
+    };
+  } catch (error) {
+    console.error('Save message error:', error);
+    return {
+      error: error instanceof Error ? error.message : 'Failed to save message',
+      message: null,
+    };
+  }
+}
+
+/**
  * Update a chat session's title
  */
 export async function updateSessionTitle(sessionId: string, title: string) {

@@ -36,7 +36,6 @@ export async function saveDocument(data: {
         content: data.content,
         user_id: data.userId,
         metadata: data.metadata || {},
-        is_active: true,
       })
       .select('id')
       .single();
@@ -79,12 +78,12 @@ export async function saveDocumentChunks(
       document_id: documentId,
       content: chunk.content,
       embedding: embeddings[index].embedding,
+      chunk_index: chunk.metadata.chunkIndex,  // Store as column, not in metadata
+      token_count: Math.round(embeddings[index].tokenCount),  // Round to integer
       metadata: {
-        chunkIndex: chunk.metadata.chunkIndex,
         totalChunks: chunk.metadata.totalChunks,
         startOffset: chunk.metadata.startOffset,
         endOffset: chunk.metadata.endOffset,
-        tokenCount: chunk.metadata.tokenCount,
         documentTitle,
         documentMetadata,
       },
@@ -154,7 +153,6 @@ export async function getDocumentsByUser(userId: string): Promise<Document[]> {
       .from('documents')
       .select('*')
       .eq('user_id', userId)
-      .eq('is_active', true)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -206,29 +204,16 @@ export async function deleteDocument(documentId: string): Promise<void> {
   try {
     const supabase = await createClient();
 
-    // Soft delete: mark as inactive
+    // Delete the document (chunks will be cascade deleted via foreign key)
     const { error: docError } = await supabase
       .from('documents')
-      .update({ is_active: false })
+      .delete()
       .eq('id', documentId);
 
     if (docError) {
       throw new StorageError(
         `Failed to delete document: ${docError.message}`,
         docError.code
-      );
-    }
-
-    // Delete associated chunks
-    const { error: chunksError } = await supabase
-      .from('document_chunks')
-      .delete()
-      .eq('document_id', documentId);
-
-    if (chunksError) {
-      throw new StorageError(
-        `Failed to delete document chunks: ${chunksError.message}`,
-        chunksError.code
       );
     }
   } catch (error) {

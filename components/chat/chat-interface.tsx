@@ -6,7 +6,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useChat } from 'ai/react';
+import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 import { MessageList } from './message-list';
 import { ChatInput } from './chat-input';
 import { SessionSidebar } from './session-sidebar';
@@ -15,6 +16,7 @@ import {
   deleteSession,
   updateSessionTitle,
   getSessionMessages,
+  saveMessage,
 } from '@/app/actions/chat';
 import type { ChatSession, Message } from '@/types/chat';
 import { toast } from 'sonner';
@@ -40,31 +42,60 @@ export function ChatInterface({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
 
-  // Use Vercel AI SDK's useChat hook for streaming
-  const { messages, append, isLoading, setMessages } = useChat({
-    api: '/api/chat',
-    body: {
-      sessionId: currentSessionId,
-      userId,
-    },
+  // Helper to extract text from AI SDK v5 parts array
+  const extractTextFromParts = (message: any): string => {
+    if (message.parts && Array.isArray(message.parts)) {
+      return message.parts
+        .filter((part: any) => part?.type === 'text')
+        .map((part: any) => part.text || '')
+        .join('\n');
+    }
+    if (typeof message.content === 'string') {
+      return message.content;
+    }
+    return '';
+  };
+
+  // Use Vercel AI SDK v5's useChat hook
+  const { messages, sendMessage, status, setMessages } = useChat({
+    transport: new DefaultChatTransport({
+      api: '/api/chat',
+    }),
     onError: (error) => {
+      console.error('[Chat] Error:', error);
       toast.error('Failed to send message', {
         description: error.message,
       });
     },
-    onResponse: (response) => {
-      // Parse sources from response headers
-      const sourcesHeader = response.headers.get('X-Sources');
-      if (sourcesHeader) {
-        try {
-          const sources = JSON.parse(sourcesHeader);
-          console.log('Received sources:', sources);
-        } catch (error) {
-          console.error('Failed to parse sources:', error);
+    onFinish: async (message) => {
+      console.log('[Chat] onFinish called:', {
+        role: message.role,
+        hasContent: !!message.content,
+        hasParts: !!message.parts,
+        sessionId: currentSessionId,
+      });
+
+      // Save assistant response to database
+      if (currentSessionId && message.role === 'assistant') {
+        const content = extractTextFromParts(message);
+        console.log('[Chat] Saving assistant message, content length:', content.length);
+
+        if (content) {
+          const result = await saveMessage(currentSessionId, 'assistant', content);
+          if (result.error) {
+            console.error('[Chat] Save error:', result.error);
+            toast.error('Failed to save response', { description: result.error });
+          } else {
+            console.log('[Chat] Saved successfully:', result.message?.id);
+          }
+        } else {
+          console.warn('[Chat] No content to save');
         }
       }
     },
   });
+
+  const isLoading = status === 'submitted' || status === 'streaming';
 
   // Load messages when session changes
   useEffect(() => {
@@ -76,29 +107,61 @@ export function ChatInterface({
     }
   }, [currentSessionId, setMessages]);
 
+  // Save assistant messages when they're done streaming
+  useEffect(() => {
+    const saveLatestAssistant = async () => {
+      if (!currentSessionId || isLoading) return;
+
+      // Get the last message
+      const lastMessage = messages[messages.length - 1];
+      if (!lastMessage || lastMessage.role !== 'assistant') return;
+
+      // Check if it's already saved in localMessages
+      const alreadySaved = localMessages.some(m => m.id === lastMessage.id);
+      if (alreadySaved) return;
+
+      // Extract and save content
+      const content = extractTextFromParts(lastMessage);
+      if (!content) {
+        console.warn('[Chat] No content to save for message:', lastMessage.id);
+        return;
+      }
+
+      console.log('[Chat] Saving latest assistant message:', lastMessage.id, 'Content length:', content.length);
+
+      const result = await saveMessage(currentSessionId, 'assistant', content);
+      if (result.error) {
+        console.error('[Chat] Save error:', result.error);
+      } else {
+        console.log('[Chat] Saved successfully, reloading messages');
+        await loadSessionMessages(currentSessionId);
+      }
+    };
+
+    saveLatestAssistant();
+  }, [messages, isLoading, currentSessionId, localMessages]);
+
   const loadSessionMessages = async (sessionId: string) => {
     try {
-      const { messages: sessionMessages, error } = await getSessionMessages(
-        sessionId
-      );
+      const { messages: sessionMessages, error } = await getSessionMessages(sessionId);
 
       if (error) {
         toast.error('Failed to load messages', { description: error });
         return;
       }
 
-      // Convert to AI SDK format
-      const formattedMessages = sessionMessages.map((msg) => ({
+      // Convert DB messages (content: string) to UIMessage format (parts array)
+      const uiMessages = sessionMessages.map((msg) => ({
         id: msg.id,
-        role: msg.role,
-        content: msg.content,
-        createdAt: msg.createdAt,
+        role: msg.role as 'user' | 'assistant' | 'system',
+        parts: [{ type: 'text' as const, text: msg.content || '' }],
+        createdAt: msg.createdAt ? new Date(msg.createdAt) : undefined,
       }));
 
-      setMessages(formattedMessages);
+      setMessages(uiMessages as any);
       setLocalMessages(sessionMessages);
     } catch (error) {
-      console.error('Error loading messages:', error);
+      console.error('[Chat] Error loading messages:', error);
       toast.error('Failed to load messages');
     }
   };
@@ -177,16 +240,25 @@ export function ChatInterface({
   const handleSendMessage = async (content: string) => {
     if (!currentSessionId) {
       // Create a new session if none exists
-      await handleCreateSession();
-      // Wait for session to be created before sending
-      setTimeout(() => {
-        append({ role: 'user', content });
-      }, 500);
+      const { session } = await createSession();
+      if (session) {
+        setSessions([session, ...sessions]);
+        setCurrentSessionId(session.id);
+
+        // Save user message to the new session
+        await saveMessage(session.id, 'user', content);
+
+        // Send message using AI SDK
+        await sendMessage({ text: content });
+      }
       return;
     }
 
+    // Save user message to database
+    await saveMessage(currentSessionId, 'user', content);
+
     // Send message using AI SDK
-    await append({ role: 'user', content });
+    await sendMessage({ text: content });
   };
 
   return (
@@ -231,15 +303,13 @@ export function ChatInterface({
 
         {/* Messages */}
         <MessageList
-          messages={
-            messages.map((msg, index) => ({
-              id: msg.id || `msg-${index}`,
-              role: msg.role as 'user' | 'assistant' | 'system',
-              content: msg.content,
-              createdAt: localMessages[index]?.createdAt || new Date(),
-              sources: localMessages[index]?.sources,
-            }))
-          }
+          messages={messages.map((msg, index) => ({
+            id: msg.id || `msg-${index}`,
+            role: msg.role as 'user' | 'assistant' | 'system',
+            content: extractTextFromParts(msg),
+            createdAt: localMessages[index]?.createdAt || new Date(),
+            sources: localMessages[index]?.sources,
+          }))}
           isLoading={isLoading}
           className="flex-1"
         />

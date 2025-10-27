@@ -1,32 +1,9 @@
 import Link from 'next/link';
-import { ArrowRight, Bot, Sparkles, Shield, Zap } from 'lucide-react';
+import { ArrowRight, Bot, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-
-const features = [
-  {
-    icon: Bot,
-    title: 'Intelligent Conversations',
-    description: 'Advanced AI models that understand context and provide natural, human-like responses.',
-  },
-  {
-    icon: Sparkles,
-    title: 'Smart Learning',
-    description: 'Continuously improving AI that learns from interactions to provide better answers.',
-  },
-  {
-    icon: Shield,
-    title: 'Secure & Private',
-    description: 'Enterprise-grade security with end-to-end encryption for all conversations.',
-  },
-  {
-    icon: Zap,
-    title: 'Lightning Fast',
-    description: 'Real-time responses powered by cutting-edge AI infrastructure.',
-  },
-];
+import { FeaturesGrid } from '@/components/home/features-grid';
 
 /**
  * Home page component - Landing page for the application.
@@ -122,19 +99,7 @@ export default async function Home() {
                 Powerful features to create, deploy, and manage intelligent AI conversations
               </p>
             </div>
-            <div className="grid gap-6 md:grid-cols-2">
-              {features.map((feature) => (
-                <Card key={feature.title}>
-                  <CardHeader>
-                    <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                      <feature.icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <CardTitle>{feature.title}</CardTitle>
-                    <CardDescription>{feature.description}</CardDescription>
-                  </CardHeader>
-                </Card>
-              ))}
-            </div>
+            <FeaturesGrid />
           </div>
         </section>
 

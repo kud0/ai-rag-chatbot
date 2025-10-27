@@ -20,6 +20,10 @@
  *   - SUPABASE_ANON_KEY: Database authentication
  */
 
+// Load environment variables from .env.local
+import { config } from 'dotenv';
+config({ path: '.env.local' });
+
 import { readdir, readFile } from 'fs/promises';
 import { join } from 'path';
 import { createClient } from '@supabase/supabase-js';
@@ -49,8 +53,8 @@ const log = {
 
 // Configuration
 const DOCUMENTS_DIR = join(process.cwd(), 'src/seed-data/documents');
-const DEMO_USER_EMAIL = 'demo@example.com';
-const DEMO_USER_PASSWORD = 'demo-password-123';
+const DEMO_USER_EMAIL = 'demo@demo.com';
+const DEMO_USER_PASSWORD = '123456';
 
 // Supabase client initialization
 function initSupabase() {
@@ -227,19 +231,19 @@ async function processDocument(
 
   try {
     // Save document to database
-    const { data: document, error: docError } = await supabase
+    const { data: document, error: docError} = await supabase
       .from('documents')
       .insert({
         title: doc.title,
         content: doc.content,
         user_id: userId,
+        file_name: doc.filename,
+        file_type: 'text/markdown',
+        file_size: Buffer.byteLength(doc.content, 'utf-8'),
         metadata: {
-          fileName: doc.filename,
-          fileSize: Buffer.byteLength(doc.content, 'utf-8'),
-          mimeType: 'text/markdown',
           source: 'seed-data',
+          originalFilename: doc.filename,
         },
-        is_active: true,
       })
       .select('id')
       .single();
@@ -268,18 +272,16 @@ async function processDocument(
     const chunkData = chunks.map((chunk, index) => ({
       document_id: documentId,
       content: chunk.content,
-      embedding: embeddings[index].embedding,
+      embedding: JSON.stringify(embeddings[index].embedding), // pgvector needs string format
+      chunk_index: chunk.metadata.chunkIndex,
+      token_count: chunk.metadata.tokenCount,
       metadata: {
-        chunkIndex: chunk.metadata.chunkIndex,
         totalChunks: chunk.metadata.totalChunks,
         startOffset: chunk.metadata.startOffset,
         endOffset: chunk.metadata.endOffset,
-        tokenCount: chunk.metadata.tokenCount,
         documentTitle: doc.title,
-        documentMetadata: {
-          fileName: doc.filename,
-          source: 'seed-data',
-        },
+        fileName: doc.filename,
+        source: 'seed-data',
       },
     }));
 

@@ -66,7 +66,8 @@ export function LoginForm() {
                 id="email"
                 name="email"
                 type="email"
-                placeholder="name@example.com"
+                placeholder="demo@demo.com"
+                defaultValue="demo@demo.com"
                 required
                 disabled={isPending}
               />
@@ -76,7 +77,8 @@ export function LoginForm() {
                 id="password"
                 name="password"
                 type="password"
-                placeholder="Enter your password"
+                placeholder="123456"
+                defaultValue="123456"
                 required
                 disabled={isPending}
               />
