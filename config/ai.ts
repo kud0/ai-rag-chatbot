@@ -65,20 +65,20 @@ Be concise, accurate, and helpful.`;
  * Text chunking configuration for document processing
  */
 export const CHUNKING_CONFIG = {
-  /** Size of each text chunk in characters */
-  chunkSize: 512,
+  /** Size of each text chunk in tokens */
+  chunkSize: 1024,
 
   /** Overlap between chunks to maintain context */
-  chunkOverlap: 50,
+  chunkOverlap: 100,
 
   /** Separators for splitting text (in priority order) */
   separators: ['\n\n', '\n', '. ', ' '] as const,
 
   /** Minimum chunk size to avoid very small chunks */
-  minChunkSize: 100,
+  minChunkSize: 200,
 
   /** Maximum chunk size (hard limit) */
-  maxChunkSize: 1000,
+  maxChunkSize: 2000,
 } as const;
 
 /**
@@ -110,16 +110,16 @@ export const DOCUMENT_LIMITS = {
  */
 export const RAG_CONFIG = {
   /** Number of top similar chunks to retrieve */
-  topK: 5,
+  topK: 15,
 
   /** Minimum similarity score threshold (0-1) */
-  similarityThreshold: 0.3,  // Lowered to 0.3 based on actual similarity scores
+  similarityThreshold: 0.0,  // No threshold - return all results
 
   /** Maximum number of chunks to include in context */
-  maxContextChunks: 3,
+  maxContextChunks: 10,
 
   /** Maximum total characters from retrieved chunks */
-  maxContextLength: 2000,
+  maxContextLength: 15000,
 
   /** Re-rank results by relevance using hybrid search (semantic + keyword) */
   enableReranking: false,

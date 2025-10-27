@@ -36,7 +36,7 @@ export function MessageList({
 
   return (
     <ScrollArea className={cn('h-full', className)}>
-      <div className="mx-auto max-w-4xl space-y-4 px-4 py-6" ref={scrollAreaRef}>
+      <div className="w-full space-y-4 px-4 py-6 sm:px-6" ref={scrollAreaRef}>
         {messages.length === 0 && !isLoading && (
           <div className="flex min-h-[400px] items-center justify-center">
             <div className="text-center text-muted-foreground">

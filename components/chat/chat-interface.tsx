@@ -107,40 +107,6 @@ export function ChatInterface({
     }
   }, [currentSessionId, setMessages]);
 
-  // Save assistant messages when they're done streaming
-  useEffect(() => {
-    const saveLatestAssistant = async () => {
-      if (!currentSessionId || isLoading) return;
-
-      // Get the last message
-      const lastMessage = messages[messages.length - 1];
-      if (!lastMessage || lastMessage.role !== 'assistant') return;
-
-      // Check if it's already saved in localMessages
-      const alreadySaved = localMessages.some(m => m.id === lastMessage.id);
-      if (alreadySaved) return;
-
-      // Extract and save content
-      const content = extractTextFromParts(lastMessage);
-      if (!content) {
-        console.warn('[Chat] No content to save for message:', lastMessage.id);
-        return;
-      }
-
-      console.log('[Chat] Saving latest assistant message:', lastMessage.id, 'Content length:', content.length);
-
-      const result = await saveMessage(currentSessionId, 'assistant', content);
-      if (result.error) {
-        console.error('[Chat] Save error:', result.error);
-      } else {
-        console.log('[Chat] Saved successfully, reloading messages');
-        await loadSessionMessages(currentSessionId);
-      }
-    };
-
-    saveLatestAssistant();
-  }, [messages, isLoading, currentSessionId, localMessages]);
-
   const loadSessionMessages = async (sessionId: string) => {
     try {
       const { messages: sessionMessages, error } = await getSessionMessages(sessionId);
@@ -323,16 +289,18 @@ export function ChatInterface({
         </div>
 
         {/* Input - fixed at bottom */}
-        <div className="shrink-0 border-t bg-background px-4 py-3">
-          <ChatInput
-            onSend={handleSendMessage}
-            disabled={isLoading}
-            placeholder={
-              currentSessionId
-                ? 'Ask me anything...'
-                : 'Create a session to start chatting'
-            }
-          />
+        <div className="shrink-0 border-t bg-background">
+          <div className="w-full px-4 py-3 sm:px-6">
+            <ChatInput
+              onSend={handleSendMessage}
+              disabled={isLoading}
+              placeholder={
+                currentSessionId
+                  ? 'Ask me anything...'
+                  : 'Create a session to start chatting'
+              }
+            />
+          </div>
         </div>
       </div>
     </div>

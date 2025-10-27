@@ -92,30 +92,29 @@ export async function POST(req: NextRequest) {
         if (ragResult.context && ragResult.sources && ragResult.sources.length > 0) {
           const sourcesText = ragResult.sources.map((s, i) => `[${i + 1}] ${s.documentTitle || 'Unknown'}`).join(', ');
 
-          systemMessage = `You are a strict document-based Q&A assistant. You are FORBIDDEN from using any knowledge outside the context provided below.
+          systemMessage = `You MUST ONLY answer from the CONTEXT below. DO NOT use ANY other knowledge.
 
-ABSOLUTE RULES (VIOLATION WILL RESULT IN ERROR):
-1. ONLY answer using information from the CONTEXT below
-2. DO NOT use any general knowledge, training data, or external information
-3. If the CONTEXT doesn't contain the answer, you MUST respond: "I don't have information about that in the uploaded documents."
-4. Always cite the source document number when answering
-5. Never make assumptions or inferences beyond what's explicitly in the CONTEXT
+STRICT RULES:
+- Answer ONLY using the CONTEXT below
+- If it's not in the CONTEXT, say: "That information is not in the uploaded documents"
+- Cite the source document number
+- DO NOT add information from your training
+- DO NOT use general knowledge
 
-CONTEXT FROM UPLOADED DOCUMENTS:
+CONTEXT:
 ${ragResult.context}
 
-AVAILABLE SOURCES: ${sourcesText}
+SOURCES: ${sourcesText}
 
-Remember: Answer ONLY from the context above. If the answer isn't there, say you don't have that information.`;
+Answer ONLY from the context above.`;
         } else {
           systemMessage = `You are a document-based Q&A assistant.
 
-The knowledge base search found NO relevant documents for this query.
+No relevant documents were found in the knowledge base for this question.
 
-You MUST respond with EXACTLY this message:
-"I don't have information about that in the uploaded documents. Please try rephrasing your question or upload relevant documents first."
+Respond: "I couldn't find relevant information about that in the uploaded documents. You may want to try rephrasing your question or uploading documents about this topic."
 
-DO NOT provide any general knowledge or information outside the document database.`;
+DO NOT provide general knowledge answers.`;
         }
       } catch (error) {
         console.error('[RAG] Error:', error);
