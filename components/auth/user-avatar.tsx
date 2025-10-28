@@ -13,9 +13,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { LogOut, Settings, User } from 'lucide-react';
 import Link from 'next/link';
-import { useActionState } from 'react';
 import { toast } from 'sonner';
-import { useEffect } from 'react';
+import { useState } from 'react';
 
 interface UserAvatarProps {
   user: {
@@ -79,15 +78,22 @@ function getUserInitials(email: string, name?: string): string {
  * ```
  */
 export function UserAvatar({ user }: UserAvatarProps) {
-  const [state, formAction, isPending] = useActionState(signOut, {
-    success: false,
-  });
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (!state.success && state.error) {
-      toast.error(state.error);
+  const handleSignOut = async () => {
+    setIsLoading(true);
+    try {
+      const result = await signOut();
+      if (result.error) {
+        toast.error(result.error);
+        setIsLoading(false);
+      }
+      // If successful, Supabase redirect happens automatically
+    } catch (error) {
+      toast.error('Failed to sign out');
+      setIsLoading(false);
     }
-  }, [state]);
+  };
 
   const initials = getUserInitials(
     user.email || '',
@@ -132,17 +138,9 @@ export function UserAvatar({ user }: UserAvatarProps) {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <form action={formAction} className="w-full">
-            <button
-              type="submit"
-              disabled={isPending}
-              className="flex w-full items-center cursor-pointer"
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              {isPending ? 'Signing out...' : 'Sign out'}
-            </button>
-          </form>
+        <DropdownMenuItem onClick={handleSignOut} disabled={isLoading}>
+          <LogOut className="mr-2 h-4 w-4" />
+          {isLoading ? 'Signing out...' : 'Sign out'}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
