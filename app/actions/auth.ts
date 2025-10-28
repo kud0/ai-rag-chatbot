@@ -165,6 +165,7 @@ export async function signUp(prevState: ActionResult | undefined, formData: Form
 /**
  * Signs out the current user.
  *
+ * @param prevState - Previous action state (for useActionState compatibility)
  * @returns Action result with success status
  *
  * @example
@@ -174,7 +175,7 @@ export async function signUp(prevState: ActionResult | undefined, formData: Form
  * </form>
  * ```
  */
-export async function signOut(): Promise<ActionResult> {
+export async function signOut(prevState?: ActionResult): Promise<ActionResult> {
   try {
     const supabase = await createClient();
     const { error } = await supabase.auth.signOut();
