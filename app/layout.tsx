@@ -16,11 +16,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "RAG Chatbot - AI-Powered Document Chat",
-    template: "%s | RAG Chatbot"
+    default: "AI Chatbots - Document Q&A with RAG",
+    template: "%s | AI Chatbots"
   },
-  description: "Intelligent chatbot powered by Retrieval-Augmented Generation (RAG) technology. Upload documents and chat with AI to get instant answers from your content.",
-  keywords: ["AI", "chatbot", "RAG", "document chat", "NLP", "artificial intelligence", "OpenAI", "vector search"],
+  description: "Upload your documents (PDF, DOCX, TXT) and chat with an AI assistant powered by OpenAI GPT-4 and vector search. Get instant, accurate answers from your own content using Retrieval-Augmented Generation (RAG).",
+  keywords: ["AI chatbot", "RAG", "document Q&A", "vector search", "OpenAI GPT-4", "PDF chat", "document analysis", "Next.js", "Supabase", "pgvector"],
   authors: [{ name: "Alex Sole Carretero" }],
   creator: "Alex Sole Carretero",
   publisher: "Alex Sole Carretero",
@@ -42,16 +42,24 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://your-domain.com",
-    title: "RAG Chatbot - AI-Powered Document Chat",
-    description: "Intelligent chatbot powered by Retrieval-Augmented Generation (RAG) technology.",
-    siteName: "RAG Chatbot",
+    url: process.env.NEXT_PUBLIC_APP_URL || "https://ai-chatbots.vercel.app",
+    title: "AI Chatbots - Smart Document Q&A",
+    description: "Upload documents and get instant answers from AI. Built with OpenAI GPT-4, Next.js 16, Supabase, and pgvector for powerful document search.",
+    siteName: "AI Chatbots",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "AI Chatbots - Document Q&A Platform",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "RAG Chatbot - AI-Powered Document Chat",
-    description: "Intelligent chatbot powered by Retrieval-Augmented Generation (RAG) technology.",
-    creator: "@yourusername",
+    title: "AI Chatbots - Smart Document Q&A",
+    description: "Upload documents and chat with AI. Powered by OpenAI GPT-4 and vector search.",
+    images: ["/og-image.png"],
   },
 };
 
