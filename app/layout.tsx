@@ -29,30 +29,20 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  icons: {
-    icon: [
-      { url: "/favicon.ico" },
-      { url: "/icon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/icon-32x32.png", sizes: "32x32", type: "image/png" },
-    ],
-    apple: [
-      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
-    ],
-  },
   manifest: "/site.webmanifest",
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: process.env.NEXT_PUBLIC_APP_URL || "https://ai-chatbots.vercel.app",
+    url: process.env.NEXT_PUBLIC_APP_URL || "https://chatbot.aistudios.pro",
     title: "AI Chatbots - Smart Document Q&A",
     description: "Upload documents and get instant answers from AI. Built with OpenAI GPT-4, Next.js 16, Supabase, and pgvector for powerful document search.",
     siteName: "AI Chatbots",
     images: [
       {
-        url: "/og-image.png",
+        url: "/api/og",
         width: 1200,
         height: 630,
-        alt: "AI Chatbots - Document Q&A Platform",
+        alt: "AI Chatbots - Smart Document Q&A",
       },
     ],
   },
@@ -60,7 +50,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "AI Chatbots - Smart Document Q&A",
     description: "Upload documents and chat with AI. Powered by OpenAI GPT-4 and vector search.",
-    images: ["/og-image.png"],
+    images: ["/api/og"],
   },
 };
 
